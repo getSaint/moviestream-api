@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.10",
+    "curlrequest": "^1.0.1",
+    "node-mpv": "^2.0.0-beta.2",
+    "prompt-sync": "^4.2.0",
+    "puppeteer": "^10.1.0"
+  }
+}
