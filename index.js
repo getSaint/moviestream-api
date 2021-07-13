@@ -1,4 +1,5 @@
 const watch = require('./lib/2kmovie')
+const subDown = require('./lib/subtitleproxy')
 const prompt = require('prompt-sync')()
 const mpvAPI = require('node-mpv');
 const mpv = new mpvAPI();
@@ -48,12 +49,13 @@ async function handle(selected) {
 			let ep = prompt(`Select an episode: `)
 			
 			//final function
-			let link = await watch.get_link(episodes[Number(ep)].id, episodes[Number(ep)].type, episodes[Number(ep)].link)
+			let vid = await watch.get_link(episodes[Number(ep)].id, episodes[Number(ep)].type, episodes[Number(ep)].link)
+			//download subtitles and start mpv... path of subtitle is /tmp/ || check the subtitleproxy file...
+			await subDown(vid.subtitle)
 
-			//start mpv first...
 			await mpv.start()		
 			
-			return startMPV(link, Number(ep), episodes) //pass the right args
+			return startMPV(vid, Number(ep), episodes) //pass the right args
 
 			}
 	} catch (e) {
@@ -61,20 +63,30 @@ async function handle(selected) {
 	}
 }
 
-let startMPV = async(link, currentEp, episodes) => {
+let startMPV = async(vid, currentEp, episodes) => {
 	try {
 
-		await mpv.load(link) //load the link
+		await mpv.load(vid.link) //load the link
+		await mpv.addSubtitles('/tmp/sub.vtt') //load the downloaded subtitles...
 		
 		//event handler for mpv
 		mpv.on('stopped', async () => {
 		let answer = prompt(`Watch next episode? (Y/N): `)
 
 			if (answer == 'Y' || answer == 'y') {
+				//check first if there's no more next ep on the list...
+				if(currentEp < episodes.length) {
+					console.log(`No more episodes for this season, Goodbye...`)
+					await mpv.quit()
+					return
+				}
 				currentEp++;
 				console.log(`Playing next episode: ${episodes[currentEp].ep_title}`)	
 				let nextlink = await watch.get_link(episodes[currentEp].id, episodes[currentEp].type, episodes[currentEp].link)
-				await mpv.load(nextlink)
+
+				await subDown(nextlink.subtitle) //download the next subtitles
+				await mpv.load(nextlink.link) //load the next episode
+				await mpv.addSubtitles("/tmp/sub.vtt")
 
 			} else if (answer == 'N' || answer == 'n') {
 				console.log(`Okay goodbye..`)
