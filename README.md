@@ -14,11 +14,10 @@ However this module uses puppeteer to grab video links and subtitles
 
 1.) Clone this repository, and cd into it
 
-		``` 
-		npm install  //install the dependencies (puppeteer, axios, etc..)
-		node index.js //start the example app I made...
+2.) `npm install`  //install the dependencies (puppeteer, axios, etc..)
+
+3.)	`node index.js` //start the example app I made...
 		
-		```
 
 ## Some notes
 
