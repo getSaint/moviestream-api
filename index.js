@@ -74,19 +74,22 @@ let startMPV = async(vid, currentEp, episodes) => {
 		let answer = prompt(`Watch next episode? (Y/N): `)
 
 			if (answer == 'Y' || answer == 'y') {
+				currentEp++;
+
 				//check first if there's no more next ep on the list...
-				if(currentEp < episodes.length) {
+				if(currentEp > episodes.length - 1) {
 					console.log(`No more episodes for this season, Goodbye...`)
 					await mpv.quit()
 					return
-				}
-				currentEp++;
+				} 
+
 				console.log(`Playing next episode: ${episodes[currentEp].ep_title}`)	
 				let nextlink = await watch.get_link(episodes[currentEp].id, episodes[currentEp].type, episodes[currentEp].link)
 
 				await subDown(nextlink.subtitle) //download the next subtitles
 				await mpv.load(nextlink.link) //load the next episode
 				await mpv.addSubtitles("/tmp/sub.vtt")
+				
 
 			} else if (answer == 'N' || answer == 'n') {
 				console.log(`Okay goodbye..`)
