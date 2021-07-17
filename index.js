@@ -1,5 +1,5 @@
 const watch = require('./lib/2kmovie')
-const subDown = require('./lib/subtitleproxy')
+const sub = require('./lib/subtitleproxy')
 const prompt = require('prompt-sync')()
 const mpvAPI = require('node-mpv');
 const mpv = new mpvAPI();
@@ -30,8 +30,10 @@ async function search() {
 async function handle(selected) {
 	try {
 		if (selected.type == 'movie') {
-			let link = await watch.get_link(selected.id, selected.type, selected.link)
-			console.log(link) //logs out the link for movies
+			let vid = await watch.get_link(selected.id, selected.type, selected.link)
+			console.log(vid)
+
+			//TO BE CONTINUED~~~~~~
 
 		}	else if (selected.type == 'tv') {
 
@@ -48,14 +50,11 @@ async function handle(selected) {
 			}
 			let ep = prompt(`Select an episode: `)
 			
-			//final function
+			//get subs and links function....
 			let vid = await watch.get_link(episodes[Number(ep)].id, episodes[Number(ep)].type, episodes[Number(ep)].link)
-			//download subtitles and start mpv... path of subtitle is /tmp/ || check the subtitleproxy file...
-			await subDown(vid.subtitle)
-
-			await mpv.start()		
 			
-			return startMPV(vid, Number(ep), episodes) //pass the right args
+			//return the proper args to the function below
+			return startMPV(vid, Number(ep), episodes)
 
 			}
 	} catch (e) {
@@ -66,8 +65,17 @@ async function handle(selected) {
 let startMPV = async(vid, currentEp, episodes) => {
 	try {
 
-		await mpv.load(vid.link) //load the link
-		await mpv.addSubtitles('/tmp/sub.vtt') //load the downloaded subtitles...
+		//ask user for subs... for this we pass the subtitles array
+		let captions = await sub.select(vid.subtitles);
+		await sub.download(captions); //then we download
+
+		//start mpv
+		await mpv.start()		
+
+		//loads the mp4 link... links[1].file - mp4, links[0].file - m3u8
+		await mpv.load(vid.links[1].file) 
+		//load the downloaded subtitles, make sure this is below mpv.start()
+		await mpv.addSubtitles("/tmp/sub.vtt")
 		
 		//event handler for mpv
 		mpv.on('stopped', async () => {
@@ -86,8 +94,9 @@ let startMPV = async(vid, currentEp, episodes) => {
 				console.log(`Playing next episode: ${episodes[currentEp].ep_title}`)	
 				let nextlink = await watch.get_link(episodes[currentEp].id, episodes[currentEp].type, episodes[currentEp].link)
 
-				await subDown(nextlink.subtitle) //download the next subtitles
-				await mpv.load(nextlink.link) //load the next episode
+				let captions = await sub.select(nextlink.subtitles) //ask user for sub
+				await sub.download(captions); //download the sub
+				await mpv.load(nextlink.links[1].file) //load the next episode
 				await mpv.addSubtitles("/tmp/sub.vtt")
 				
 
